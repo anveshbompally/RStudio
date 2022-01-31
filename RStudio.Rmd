@@ -1,0 +1,356 @@
+---
+title: "Project 1"
+output: word_document
+author: Anvesh Bompally
+---
+
+####################          TASK 1          ####################
+
+```{r}
+
+#Created 2 separate functions for plotting both 3D and 2D plots. 
+
+function_for_3D_plots <- function(Data) {
+  
+  #Running all the required libraries first
+
+  library(NbClust)
+  library(factoextra)
+  library(ggplot2)
+  library(scatterplot3d)
+  library(ClusterR)
+    
+  #Code for external validation score for K Means algorithm 
+  
+  km = kmeans(Data[,2:4], length(unique(Data$Class)), nstart=20)
+  Data$Kclass = km$cluster
+  ext_score = external_validation(Data$Class, km$cluster, method='jaccard_index')
+  print(paste('The external validation score for this dataset after performing K Means clustering algorithm is',ext_score))
+  
+  #Code for external validation score for Heirarchical Clustering
+  
+  hc.single = hclust(dist(Data[2:4]), method='single')
+  Data$HClass = cutree(hc.single, length(unique(Data$Class)))
+  ext_score = external_validation(Data$Class, cutree(hc.single, length(unique(Data$Class))), method='jaccard_index')
+  print(paste('The external validation score for this dataset after performing Heirarchical Clustering is',ext_score))
+  
+  #Scatter Plot for the original class
+  
+  colors <- c("#999999", "#E69F00", "#56B4E9", "#34eb8f", "#eb34db", "#eb3434", "#8334eb")
+  colors <- colors[Data$Class]
+  scatterplot3d(Data[,2:4], pch = 16, color=colors, main='Scatter plot for the original class')
+  
+  #3D Scatter Plot for Class created by KMeans Algorithm
+
+  colors <- c("#999999", "#E69F00", "#56B4E9", "#34eb8f", "#eb34db", "#eb3434", "#8334eb")
+  colors <- colors[Data$Kclass]
+  scatterplot3d(Data[,2:4], pch = 16, color=colors, main='Scatter Plot for Class created by KMeans Algorithm')
+  
+  #3D Scatter Plot for Class created by Heirarchical Clustering
+
+  colors <- c("#999999", "#E69F00", "#56B4E9", "#34eb8f", "#eb34db", "#eb3434", "#8334eb")
+  colors <- colors[Data$HClass]
+  scatterplot3d(Data[,2:4], pch = 16, color=colors, main='Scatter Plot for Class created by Heirarchical Clustering')
+  
+  #Dendrogram for Heirarchical CLustering
+  
+  plot(hc.single)
+  
+}
+```
+
+
+```{r}
+
+#Function for creating 2D plots
+
+function_for_2D_plots <- function(Data) {
+  
+  #Running all the required libraries first
+
+  library(NbClust)
+  library(factoextra)
+  library(ggplot2)
+  library(scatterplot3d)
+  library(ClusterR)
+  library(grid)
+  library(gridExtra)
+    
+  #Code for external validation score for K Means algorithm 
+  
+  km = kmeans(Data[,2:3], length(unique(Data$Class)), nstart=20)
+  Data$Kclass = km$cluster
+  ext_score = external_validation(Data$Class, km$cluster, method='jaccard_index')
+  print(paste('The external validation score for this dataset after performing K Means clustering algorithm is',ext_score))
+  
+  #Code for external validation score for Heirarchical Clustering
+  
+  hc.single = hclust(dist(Data[,2:3]), method='single')
+  Data$HClass = cutree(hc.single, length(unique(Data$Class)))
+  ext_score = external_validation(Data$Class, cutree(hc.single, length(unique(Data$Class))), method='jaccard_index')
+  print(paste('The external validation score for this dataset after performing Heirarchical Clustering is',ext_score))
+  
+  #2D Plots 
+
+  colors <- c("#999999", "#E69F00", "#56B4E9", "#34eb8f", "#eb34db", "#eb3434")
+  
+  p1 = ggplot(Data, aes(x=X1, y=X2,color=colors[Class])) + geom_point(show.legend = FALSE) + ggtitle("Original Class")
+  p2 = ggplot(Data, aes(x=X1, y=X2,color=colors[Kclass])) + geom_point(show.legend = FALSE) + ggtitle("K Means")
+  p3 = ggplot(Data, aes(x=X1, y=X2,color=colors[HClass])) + geom_point(show.legend = FALSE) + ggtitle("Heirarchical Clustering")
+  grid.arrange(p1, p2, p3, ncol = 3)
+
+}
+
+```
+
+
+```{r Main Chunk To execute the functions according to the dataset}
+
+#To get the respective 3D plots for the datasets "Data1", "Data2", "Data3" "Data4", "Data5" & "Data8" pass in the dataset into the dataframe called "Data" below and then pass the dataframe into the function_for_3D_plots as shown below. 
+
+Data = read.csv('Data1.csv')
+
+function_for_3D_plots(Data)
+
+```
+
+```{r}
+
+#To get the respective 2D plots for the datasets "Data6" & "Data7" pass in the dataset into the dataframe called "Data" below and then pass the dataframe into the function_for_2D_plots as shown below. 
+
+Data = read.csv('Data6.csv')
+
+function_for_2D_plots(Data)
+
+```
+
+####################          TASK 2         ####################
+
+
+```{r}
+
+#Reading the data set
+
+df = read.csv('~/OneDrive - Northeastern University/Foundations of Data Analytics/Project 1/World Indicators.csv', header = TRUE)
+
+```
+
+
+```{r Code chunk for Data Preprocessing}
+
+#Fill in all the blank values with NA
+
+df <- df %>% 
+  mutate_all(na_if,"")
+
+#Check the count of missing values within each column of the dataset
+
+print("Number of missing values for each column is as follows: ")
+cat("\n\n")
+sapply(df, function(x) sum(is.na(x)))
+
+
+#Check the number of columns with missing values which are greater than 40
+
+number_of_columns = sum(sapply(df, function(x) sum(is.na(x))) > 40, na.rm = TRUE)
+
+cat("\n\n")
+print(paste('The number of columns with more than 40 missing values is ',number_of_columns))
+cat("\n\n")
+
+#Drop the columns "Energy Usage" and "Lending Interest" because more than 40 values are missing
+
+df = df[, !names(df) %in% c("Energy.Usage", "Lending.Interest")] 
+
+#Check the columns which have character as datatype and convert all of them to numerical data
+print("All the columns which are of type Character are as follows: ")
+cat("\n\n")
+
+sapply(df, class) == "character"
+
+#Removing all special characters from the data and converting the columns to numeric datatype
+
+df$Business.Tax.Rate <- as.numeric(gsub("%",'', as.character(df$Business.Tax.Rate)))
+df$GDP <- as.numeric(gsub("[[:punct:]]", "", df$GDP))
+df$Health.Exp.Capita <- as.numeric(gsub("[[:punct:]]", "", df$Health.Exp.Capita))
+
+#Create a new dataframe to perform scaling on it
+
+df_scaled = df 
+
+#Scaling the dataframe df_scaled
+
+column = colnames(df[1:16])
+for (i in column){
+  df_scaled[i] = scale(df[i])
+}
+
+#Eliminating NA values in both the dataframes
+
+df_scaled = na.omit(df_scaled)
+df = na.omit(df)
+
+```
+
+
+```{r Part 2 - Internal Validation to identify optimal number of Cluster}
+
+
+#Finding out the optimal number of clusters for KMEANS
+
+fviz_nbclust(df_scaled[,1:16], kmeans, method="wss")
+fviz_nbclust(df_scaled[,1:16], kmeans, method="silhouette")
+
+
+#Finding out the optimal number of clusters for Heirarchical Clustering
+
+fviz_nbclust(df_scaled[,1:16], FUN = hcut, method = "wss")
+fviz_nbclust(df_scaled[,1:16], FUN = hcut, method = "silhouette")
+
+```
+
+
+
+```{r Part 1 - Performing Clustering (K Means and Heirarchical Clustering) and Verifying the Results}
+
+
+#Performing K Means clustering with K value as 2 because we got 2 as the optimal number of clusters using elbow method
+
+km = kmeans(df_scaled[,1:16], 2, nstart=20)
+df$Kclass = km$cluster #Fitting the cluster to the original data set instead of the scaled data set
+
+
+#Performing Heirarchical Clustering and cutting the tree at 2 because we got 2 as the optimal number of clusters using elbow method
+
+hc.single = hclust(dist(df_scaled[1:16]), method='single')
+df$HClass = cutree(hc.single, 2) #Fitting the cluster to the original data set instead of the scaled data set
+
+#Part 3 - Reporting the Best Clustering Solution
+
+#Count the number of countries that have been classified using K Means algorithm
+
+df %>%
+  count(df$Kclass)
+
+#By counting the number of values we got using K means clustering we can see that the model has classified the countries into 2 groups (Developed and Underdeveloped) and there are 98 countries in the first cluster whereas there are 73 countries in the second cluster
+
+df %>%
+  count(df$HClass)
+
+#We can observe that the Hierarchical clustering has not performed very well and it has classified only 1 country into the second class.
+
+#Hence, we can conclude that K Means is the better clustering algorithm for this data set.
+
+#Classifying the countries into 2 groups then we can observe that most of the developed countries have been grouped together and the underdeveloped countries have been grouped together.
+
+```
+
+
+```{r Part 3 - Detailed list of all the groups and the countries included within the groups}
+
+
+library(dplyr)
+
+df_Kclass <- subset(df, select = c(18:19))
+
+Group1 = df_Kclass%>%
+  filter(df_Kclass$Kclass==1)
+Group2 = df_Kclass%>%
+  filter(df_Kclass$Kclass==2)
+
+view(Group1)
+view(Group2)
+
+
+```
+
+
+```{r Part 4 - Generating Graphs according to the classes}
+
+#Graph 1 Birth Rate vs Infant Mortality Rate
+
+colors <- c("red", "black")
+  
+plot(x = df$Birth.Rate,y = df$Infant.Mortality.Rate,
+     xlab = "Birth Rate",
+     ylab = "Infant.Mortality.Rate",
+     # xlim = c(0,150),
+     # ylim = c(0,150),		 
+     main = "Birth Rate vs Infant Mortality Rate",
+     col = colors[df$Kclass])
+legend("topleft",                             
+       legend = c("Red - Developed Countries", "Black - Underdeveloped Countries"))
+
+
+#Graph 2 Population Urban vs Mobile Phone Usage
+
+plot(x = df$Internet.Usage  ,y = df$Mobile.Phone.Usage,
+     xlab = "Internet.Usage",
+     ylab = "Mobile.Phone.Usage",
+     # xlim = c(40,90),
+     # ylim = c(40,90),		 
+     main = "Internet.Usage vs Mobile Phone Usage",
+     col = colors[df$Kclass])
+legend("topleft",                             
+       legend = c("Red - Developed Countries", "Black - Underdeveloped Countries"))
+
+#Graph 3
+
+plot(x = df$Health.Exp...GDP  ,y = df$Health.Exp.Capita,
+     xlab = "Health EXP GDP",
+     ylab = "Health EXP Capita",
+     # xlim = c(0.000,0.050),
+     # ylim = c(0.000,0.200),
+     main = "Health EXP GDP vs Health EXP Capita",
+     col = colors[df$Kclass])
+     
+legend("topleft",
+       legend = c("Red - Developed Countries", "Black - Underdeveloped Countries"),
+       col = colors[df$Kclass])
+
+
+#Graph 4 Life Expectency of Male vs GDP
+
+plot(x = df$Life.Expectancy.Male  ,y = df$GDP,
+     xlab = "Life Expectancy Male",
+     ylab = "GDP",
+     xlim = c(40,90),
+     ylim = c(0,3e+12),
+     main = "Life.Expectancy.Male vs GDP",
+     col = colors[df$Kclass])
+     
+legend("topleft",
+       legend = c("Red - Developed Countries", "Black - Underdeveloped Countries"),
+       col = colors[df$Kclass])
+
+
+#Graph 5 Life Expectency of Male vs GDP
+
+plot(x = df$Business.Tax.Rate  ,y = df$GDP,
+     xlab = "Business.Tax.Rate",
+     ylab = "GDP",
+     xlim = c(0,100),
+     ylim = c(0,3e+12),
+     main = "Business.Tax.Rate vs GDP",
+     col = colors[df$Kclass])
+     
+legend("topleft",
+       legend = c("Red - Developed Countries", "Black - Underdeveloped Countries"),
+       col = colors[df$Kclass])
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
